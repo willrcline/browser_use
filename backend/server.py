@@ -108,7 +108,9 @@ async def run(req: RunRequest):
 
         repo_root = Path(__file__).resolve().parents[1]
         run_task_path = repo_root / "run_task.py"
-        cmd = [sys.executable, str(run_task_path), task]
+        repo_python = repo_root / ".venv" / "bin" / "python"
+        python_exe = str(repo_python) if repo_python.exists() else sys.executable
+        cmd = [python_exe, str(run_task_path), task]
         proc = await asyncio.create_subprocess_exec(
             *cmd,
             stdout=asyncio.subprocess.PIPE,
