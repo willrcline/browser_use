@@ -14,6 +14,12 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 
+def _mask_value(value: str) -> str:
+    if not value:
+        return ""
+    return "•" * min(len(value), 16)
+
+
 load_dotenv()
 
 app = FastAPI(title="Browser Use UI Backend")
@@ -99,6 +105,15 @@ async def run(req: RunRequest):
 
     async def stream():
         yield _sse("starting", event="status")
+
+        selected_keys = sorted(sensitive_env.keys())
+        if selected_keys:
+            rendered = "\n".join(
+                f"- {k}: {_mask_value(sensitive_env[k])}" for k in selected_keys
+            )
+            yield _sse(f"Selected credentials:\n{rendered}", event="log")
+        else:
+            yield _sse("Selected credentials: (none)", event="log")
 
         env = os.environ.copy()
         # Make credentials available to run_task via environment for now

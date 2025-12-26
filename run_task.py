@@ -3,11 +3,26 @@ from __future__ import annotations
 import argparse
 import asyncio
 import os
+import sys
+from pathlib import Path
+from typing import Any
 
 from browser_use import Agent, Browser, ChatBrowserUse
 from dotenv import load_dotenv
 from browser_automation.config import AppConfig, ChromeProfileConfig
 from browser_automation.tools import build_tools
+
+
+def _load_sensitive_data_from_env(prefix: str = "CRED_") -> dict[str, str] | None:
+    items: dict[str, str] = {}
+    for k, v in os.environ.items():
+        if not k.startswith(prefix):
+            continue
+        key_name = k[len(prefix) :]
+        if not key_name:
+            continue
+        items[key_name] = v
+    return items or None
 
 
 def _ensure_browser_use_models_ready() -> None:
@@ -83,6 +98,8 @@ async def main_async() -> None:
     tools = build_tools()
     browser = build_browser(cfg)
 
+    sensitive_data = _load_sensitive_data_from_env()
+
     llm = ChatBrowserUse()
 
     agent = Agent(
@@ -90,6 +107,7 @@ async def main_async() -> None:
         llm=llm,
         browser=browser,
         tools=tools,
+        sensitive_data=sensitive_data,
         max_steps=args.max_steps,
         use_vision="auto",
     )
